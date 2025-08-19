@@ -4,25 +4,31 @@ import helmet from "helmet";
 import morgan from "morgan";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 import xss from "xss-clean";
 import hpp from "hpp";
 import swaggerUi from "swagger-ui-express";
 import dotenv from "dotenv";
 import { specs } from "./config/swagger.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
+import authRoutes from "./routes/auth.routes.js";
+import googleAuthRoutes from "./routes/google.auth.routes.js";
 
 dotenv.config();
 
 // Initialize express app
 const app = express();
 
-// Implementar CORS
+// Implement CORS with credentials
 app.use(
 	cors({
 		origin: process.env.CORS_ORIGINS?.split(",") || "http://localhost:3000",
-		credentials: true,
+		credentials: true, // Important for cookies
 	})
 );
+
+// Cookie parser - Needed for refresh tokens
+app.use(cookieParser());
 
 // Security headers
 app.use(helmet());
@@ -31,30 +37,29 @@ app.use(helmet());
 if (process.env.NODE_ENV === "development") {
 	app.use(morgan("dev"));
 } else {
-	// Logging para producción
 	app.use(
 		morgan("combined", {
-			skip: (req, res) => res.statusCode < 400, // Solo log errores en producción
+			skip: (req, res) => res.statusCode < 400,
 		})
 	);
 }
 
 // Rate limiting
 const limiter = rateLimit({
-	max: 100, // Límite de 100 peticiones
-	windowMs: 60 * 60 * 1000, // Por hora
+	max: 100,
+	windowMs: 60 * 60 * 1000,
 	message: "Too many requests from this IP, please try again in an hour!",
 });
 app.use("/api", limiter);
 
 // Body parser
-app.use(express.json({ limit: "10kb" })); // Limitar tamaño del body
+app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
-// Data sanitization contra XSS
+// Data sanitization against XSS
 app.use(xss());
 
-// Prevenir parameter pollution
+// Prevent parameter pollution
 app.use(hpp());
 
 // Compression
@@ -68,10 +73,9 @@ app.get("/health", (req, res) => {
 	res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
 
-// API Routes will be added here
-// app.use('/api/v1/auth', authRoutes);
-// app.use('/api/v1/users', userRoutes);
-// app.use('/api/v1/trips', tripRoutes);
+// API Routes
+app.use("/api/v1/auth", authRoutes); // Local authentication routes
+app.use("/api/v1/auth/google", googleAuthRoutes); // Google authentication routes
 
 // 404 handler
 app.all("*", (req, res, next) => {
