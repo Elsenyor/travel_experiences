@@ -1,4 +1,4 @@
-// Tipos de error personalizados
+// Clase de error personalizada (mantenida como clase por compatibilidad con Error nativo)
 export class AppError extends Error {
 	constructor(message, statusCode) {
 		super(message);
@@ -10,7 +10,23 @@ export class AppError extends Error {
 	}
 }
 
-// Middleware de manejo de errores
+/**
+ * Crea un nuevo error operacional
+ * @param {string} message - Mensaje de error
+ * @param {number} statusCode - Código de estado HTTP
+ * @returns {AppError} Error personalizado
+ */
+export const createError = (message, statusCode) => {
+	return new AppError(message, statusCode);
+};
+
+/**
+ * Middleware de manejo de errores
+ * @param {Error} err - Error object
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
 export const errorHandler = (err, req, res, next) => {
 	err.statusCode = err.statusCode || 500;
 	err.status = err.status || "error";
@@ -38,4 +54,10 @@ export const errorHandler = (err, req, res, next) => {
 			});
 		}
 	}
+};
+
+export default {
+	AppError,
+	createError,
+	errorHandler,
 };
