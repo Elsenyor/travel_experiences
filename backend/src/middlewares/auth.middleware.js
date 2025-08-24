@@ -1,4 +1,4 @@
-import JWTService from "../utils/jwt.service.js";
+import * as jwtService from "../utils/jwt.service.js";
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../utils/cookie.service.js";
 import { AppError } from "./error.middleware.js";
 
@@ -11,8 +11,8 @@ import { AppError } from "./error.middleware.js";
 export const authenticateToken = async (req, res, next) => {
 	try {
 		const authHeader = req.headers.authorization;
-		const token = JWTService.extractTokenFromHeader(authHeader);
-		const payload = JWTService.verifyAccessToken(token);
+		const token = jwtService.extractTokenFromHeader(authHeader);
+		const payload = jwtService.verifyAccessToken(token);
 
 		// Add user data to request for use in subsequent middlewares/controllers
 		req.user = payload;
@@ -89,12 +89,12 @@ export const refreshAccessToken = async (req, res, next) => {
 		}
 
 		// Verify refresh token and generate new access token
-		const payload = JWTService.verifyRefreshToken(refreshToken);
-		const newRefreshToken = JWTService.generateRefreshToken({
+		const payload = jwtService.verifyRefreshToken(refreshToken);
+		const newRefreshToken = jwtService.generateRefreshToken({
 			id: payload.id,
 			role: payload.role,
 		});
-		const accessToken = JWTService.generateAccessToken({
+		const accessToken = jwtService.generateAccessToken({
 			id: payload.id,
 			role: payload.role,
 		});
@@ -124,4 +124,12 @@ export const logout = (req, res) => {
 		status: "success",
 		message: "Logged out successfully",
 	});
+};
+
+export default {
+	authenticateToken,
+	authorizeRoles,
+	authorizeOwnership,
+	refreshAccessToken,
+	logout,
 };
