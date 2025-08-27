@@ -90,6 +90,22 @@ export const handleReactAdminParams = (req, res, next) => {
 		req.reactAdminParams.search = req.query.q;
 	}
 
+	// Handle relation parameters
+	req.reactAdminParams.relations = {
+		include: [],
+		exclude: [],
+	};
+
+	// Process _include parameter for relations to include
+	if (req.query._include) {
+		req.reactAdminParams.relations.include = req.query._include.split(",").map((r) => r.trim());
+	}
+
+	// Process _exclude parameter for relations to exclude
+	if (req.query._exclude) {
+		req.reactAdminParams.relations.exclude = req.query._exclude.split(",").map((r) => r.trim());
+	}
+
 	// Store the resource name for Content-Range header
 	const url = req.originalUrl || req.url;
 	const urlParts = url.split("/");

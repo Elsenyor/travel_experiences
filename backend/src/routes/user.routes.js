@@ -2,11 +2,15 @@ import { Router } from "express";
 import UserController from "../controllers/user.controller.js";
 import { authenticateToken, checkRole } from "../middlewares/auth.middleware.js";
 import { handleReactAdminParams } from "../middlewares/react-admin.middleware.js";
+import { handleBulkOperations } from "../middlewares/bulk-operations.middleware.js";
 
 const router = Router();
 
 // Apply React Admin middleware to all routes
 router.use(handleReactAdminParams);
+
+// Apply bulk operations middleware
+router.use(handleBulkOperations);
 
 /**
  * @swagger
@@ -96,10 +100,32 @@ router.delete("/:id", authenticateToken, checkRole("admin"), UserController.dele
 
 /**
  * @swagger
- * /api/v1/users/bulk:
+ * /api/v1/users/bulk/delete:
  *   post:
  *     tags: [Users]
- *     description: Bulk operations on users
+ *     description: Bulk delete users
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post("/bulk/delete", authenticateToken, checkRole("admin"), UserController.bulkDeleteUsers);
+
+/**
+ * @swagger
+ * /api/v1/users/bulk/update:
+ *   post:
+ *     tags: [Users]
+ *     description: Bulk update users
  *     requestBody:
  *       required: true
  *       content:
@@ -116,10 +142,6 @@ router.delete("/:id", authenticateToken, checkRole("admin"), UserController.dele
  *     security:
  *       - bearerAuth: []
  */
-// Bulk delete
-router.post("/bulk/delete", authenticateToken, checkRole("admin"), UserController.bulkDeleteUsers);
-
-// Bulk update
 router.post("/bulk/update", authenticateToken, checkRole("admin"), UserController.bulkUpdateUsers);
 
 export default router;
