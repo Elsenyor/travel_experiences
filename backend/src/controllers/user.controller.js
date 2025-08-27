@@ -1,7 +1,8 @@
-import UserModel from "../models/users.model.js";
+import UserModel from "../models/user.model.js";
 import { AppError } from "../middlewares/error.middleware.js";
 import { setContentRange } from "../middlewares/content-range.middleware.js";
 import { formatReactAdminList, formatReactAdminGetOne, formatReactAdminSave } from "../utils/response.formatter.js";
+import { processBulkDelete, processBulkUpdate } from "../middlewares/bulk-operations.middleware.js";
 
 /**
  * Get user by ID
@@ -137,24 +138,8 @@ export const bulkDeleteUsers = async (req, res, next) => {
 	try {
 		const { ids } = req.body;
 
-		if (!ids || !Array.isArray(ids) || ids.length === 0) {
-			throw new AppError("No user IDs provided", 400);
-		}
-
-		// Delete each user
-		const results = await Promise.all(
-			ids.map(async (id) => {
-				try {
-					await UserModel.remove(id);
-					return { id, deleted: true };
-				} catch (error) {
-					return { id, deleted: false, error: error.message };
-				}
-			})
-		);
-
-		// Count successful deletions
-		const successCount = results.filter((r) => r.deleted).length;
+		// Use the bulk operation utility
+		const result = await processBulkDelete(UserModel.remove, ids);
 
 		res.json({ data: ids });
 	} catch (error) {
@@ -170,28 +155,8 @@ export const bulkUpdateUsers = async (req, res, next) => {
 	try {
 		const { ids, data } = req.body;
 
-		if (!ids || !Array.isArray(ids) || ids.length === 0) {
-			throw new AppError("No user IDs provided", 400);
-		}
-
-		if (!data || Object.keys(data).length === 0) {
-			throw new AppError("No update data provided", 400);
-		}
-
-		// Update each user
-		const results = await Promise.all(
-			ids.map(async (id) => {
-				try {
-					await UserModel.update(id, data);
-					return { id, updated: true };
-				} catch (error) {
-					return { id, updated: false, error: error.message };
-				}
-			})
-		);
-
-		// Count successful updates
-		const successCount = results.filter((r) => r.updated).length;
+		// Use the bulk operation utility
+		const result = await processBulkUpdate(UserModel.update, ids, data);
 
 		res.json({ data: ids });
 	} catch (error) {
