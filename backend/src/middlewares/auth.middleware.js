@@ -24,6 +24,24 @@ export const authenticateToken = async (req, res, next) => {
 
 /**
  * Middleware to check if user has required role
+ * @param {string} role - Required role
+ */
+export const checkRole = (role) => {
+	return (req, res, next) => {
+		if (!req.user) {
+			return next(new AppError("User not authenticated", 401));
+		}
+
+		if (req.user.role !== role) {
+			return next(new AppError("Not authorized to access this route", 403));
+		}
+
+		next();
+	};
+};
+
+/**
+ * Middleware to check if user has one of the required roles
  * @param {string[]} roles - Array of allowed roles
  */
 export const authorizeRoles = (...roles) => {
@@ -128,6 +146,7 @@ export const logout = (req, res) => {
 
 export default {
 	authenticateToken,
+	checkRole,
 	authorizeRoles,
 	authorizeOwnership,
 	refreshAccessToken,

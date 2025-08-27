@@ -9,7 +9,7 @@ export const findById = async (id) => {
 	const query = "SELECT id, name, email, role, created_at FROM users WHERE id = ?";
 	try {
 		const user = await dbPool.executeQuery(query, [id]);
-		return user[0] || null; // Devuelve null si no encuentra el usuario
+		return user[0] || null;
 	} catch (error) {
 		throw new Error(`Error finding user: ${error.message}`);
 	}
@@ -26,19 +26,15 @@ export const findById = async (id) => {
  */
 export const create = async ({ name, email, password, role = "user" }) => {
 	const queries = [
-		// Primero verificamos si el email ya existe
 		["SELECT id FROM users WHERE email = ?", [email]],
-		// Si no existe, insertamos el nuevo usuario
 		["INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", [name, email, password, role]],
 	];
 
 	try {
 		const results = await dbPool.executeTransaction(queries);
-		// Si encontramos un usuario existente con ese email
 		if (results[0].length > 0) {
 			throw new Error("Email already exists");
 		}
-		// Retornamos el ID del usuario creado
 		return results[1].insertId;
 	} catch (error) {
 		throw new Error(`Error creating user: ${error.message}`);
@@ -56,7 +52,6 @@ export const update = async (id, updateData) => {
 	const updates = [];
 	const values = [];
 
-	// Construir query dinámica solo con los campos proporcionados
 	Object.keys(updateData).forEach((key) => {
 		if (allowedFields.includes(key)) {
 			updates.push(`${key} = ?`);
@@ -66,7 +61,7 @@ export const update = async (id, updateData) => {
 
 	if (updates.length === 0) return null;
 
-	values.push(id); // Añadir el ID para el WHERE
+	values.push(id);
 	const query = `UPDATE users SET ${updates.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
 
 	try {
@@ -78,11 +73,11 @@ export const update = async (id, updateData) => {
 };
 
 /**
- * Delete user
+ * Remove user
  * @param {number} id - User ID
- * @returns {Promise<boolean>} True if deleted, false otherwise
+ * @returns {Promise<boolean>} True if removed, false otherwise
  */
-export const deleteUser = async (id) => {
+export const remove = async (id) => {
 	const query = "DELETE FROM users WHERE id = ?";
 	try {
 		const result = await dbPool.executeQuery(query, [id]);
@@ -99,9 +94,11 @@ export const deleteUser = async (id) => {
  * @param {string} filters.searchTerm - Search in name and email
  * @param {number} filters.limit - Results limit
  * @param {number} filters.offset - Results offset
+ * @param {string} filters.sortField - Field to sort by
+ * @param {string} filters.sortOrder - Sort order (ASC or DESC)
  * @returns {Promise<Array>} Array of users
  */
-export const findByFilters = async ({ role, searchTerm, limit = 10, offset = 0 }) => {
+export const findByFilters = async ({ role, searchTerm, limit = 10, offset = 0, sortField = "created_at", sortOrder = "DESC" }) => {
 	let query = "SELECT id, name, email, role, created_at FROM users WHERE 1=1";
 	const values = [];
 
@@ -115,8 +112,15 @@ export const findByFilters = async ({ role, searchTerm, limit = 10, offset = 0 }
 		values.push(`%${searchTerm}%`, `%${searchTerm}%`);
 	}
 
-	query += " ORDER BY created_at DESC LIMIT ? OFFSET ?";
-	values.push(limit, offset);
+	// Validate sort field to prevent SQL injection
+	const allowedSortFields = ["id", "name", "email", "role", "created_at"];
+	const validSortField = allowedSortFields.includes(sortField) ? sortField : "created_at";
+
+	// Validate sort order
+	const validSortOrder = ["ASC", "DESC"].includes(sortOrder) ? sortOrder : "DESC";
+
+	query += ` ORDER BY ${validSortField} ${validSortOrder} LIMIT ? OFFSET ?`;
+	values.push(parseInt(limit), parseInt(offset));
 
 	try {
 		return await dbPool.executeQuery(query, values);
@@ -126,18 +130,39 @@ export const findByFilters = async ({ role, searchTerm, limit = 10, offset = 0 }
 };
 
 /**
- * Check database connection
- * @returns {Promise<Object>} Connection status
+ * Count users by filters
+ * @param {Object} filters - Search filters
+ * @param {string} filters.role - Filter by role
+ * @param {string} filters.searchTerm - Search in name and email
+ * @returns {Promise<number>} Count of matching users
  */
-export const checkConnection = async () => {
-	return dbPool.checkPoolStatus();
+export const countByFilters = async ({ role, searchTerm }) => {
+	let query = "SELECT COUNT(*) as total FROM users WHERE 1=1";
+	const values = [];
+
+	if (role) {
+		query += " AND role = ?";
+		values.push(role);
+	}
+
+	if (searchTerm) {
+		query += " AND (name LIKE ? OR email LIKE ?)";
+		values.push(`%${searchTerm}%`, `%${searchTerm}%`);
+	}
+
+	try {
+		const result = await dbPool.executeQuery(query, values);
+		return result[0].total;
+	} catch (error) {
+		throw new Error(`Error counting users: ${error.message}`);
+	}
 };
 
 export default {
 	findById,
 	create,
 	update,
-	delete: deleteUser,
+	remove,
 	findByFilters,
-	checkConnection,
+	countByFilters,
 };
