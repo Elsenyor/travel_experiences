@@ -13,6 +13,7 @@ import { specs } from "./config/swagger.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import googleAuthRoutes from "./routes/google.auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(
 	cors({
 		origin: process.env.CORS_ORIGINS?.split(",") || "http://localhost:3000",
 		credentials: true, // Important for cookies
+		exposedHeaders: ["Content-Range", "X-Total-Count"], // Important for React Admin
 	})
 );
 
@@ -59,8 +61,12 @@ app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 // Data sanitization against XSS
 app.use(xss());
 
-// Prevent parameter pollution
-app.use(hpp());
+// Prevent parameter pollution - but allow React Admin specific parameters
+app.use(
+	hpp({
+		whitelist: ["_sort", "_order", "_start", "_end", "_page", "_perPage", "_filter", "q"],
+	})
+);
 
 // Compression
 app.use(compression());
@@ -76,6 +82,7 @@ app.get("/health", (req, res) => {
 // API Routes
 app.use("/api/v1/auth", authRoutes); // Local authentication routes
 app.use("/api/v1/auth/google", googleAuthRoutes); // Google authentication routes
+app.use("/api/v1/users", userRoutes); // User management routes
 
 // 404 handler
 app.all("*", (req, res, next) => {
