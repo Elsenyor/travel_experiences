@@ -16,6 +16,7 @@ import googleAuthRoutes from "./routes/google.auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import articlesRoutes from "./routes/articles.routes.js";
 import tagsRoutes from "./routes/tags.routes.js";
+import newsletterRoutes from "./routes/newsletter.routes.js";
 
 dotenv.config();
 
@@ -87,6 +88,7 @@ app.use("/api/v1/auth/google", googleAuthRoutes); // Google authentication route
 app.use("/api/v1/users", userRoutes); // User management routes
 app.use("/api/v1/articles", articlesRoutes); // Articles routes
 app.use("/api/v1/tags", tagsRoutes); // Tags routes
+app.use("/api/v1/newsletter", newsletterRoutes); // Newsletter routes
 
 // 404 handler
 app.all("*", (req, res, next) => {
