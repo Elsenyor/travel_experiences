@@ -1,8 +1,9 @@
 import dbPool from "../utils/database.pool.js";
+import { generateUUID } from "../utils/uuid.service.js";
 
 /**
  * Find booking by ID
- * @param {number} id - Booking ID
+ * @param {string} id - Booking UUID
  * @returns {Promise<Object|null>} Booking object or null if not found
  */
 export const findById = async (id) => {
@@ -29,13 +30,13 @@ export const findById = async (id) => {
 /**
  * Create new booking
  * @param {Object} bookingData - Booking data
- * @param {number} bookingData.user_id - User ID making the booking
- * @param {number} bookingData.trip_id - Trip ID being booked
+ * @param {string} bookingData.user_id - User ID making the booking
+ * @param {string} bookingData.trip_id - Trip ID being booked
  * @param {string} bookingData.trip_date - Selected trip date (YYYY-MM-DD)
  * @param {number} bookingData.num_people - Number of people in booking
  * @param {string} bookingData.status - Booking status (default: "pending")
  * @param {string} bookingData.comments - Additional booking comments
- * @returns {Promise<number>} Created booking ID
+ * @returns {Promise<string>} Created booking ID (UUID)
  */
 export const create = async ({ user_id, trip_id, trip_date, num_people, status = "pending", comments = null }) => {
 	// Validate availability first
@@ -56,14 +57,17 @@ export const create = async ({ user_id, trip_id, trip_date, num_people, status =
 			throw new Error(`Not enough spots available. Only ${availability[0].available_spots} spots left`);
 		}
 
+		// Generate UUID for new booking
+		const id = generateUUID();
+
 		// Create booking
 		const query = `
 			INSERT INTO bookings 
-			(user_id, trip_id, trip_date, num_people, status, comments) 
-			VALUES (?, ?, ?, ?, ?, ?)
+			(id, user_id, trip_id, trip_date, num_people, status, comments) 
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 		`;
 
-		const result = await dbPool.executeQuery(query, [user_id, trip_id, trip_date, num_people, status, comments]);
+		await dbPool.executeQuery(query, [id, user_id, trip_id, trip_date, num_people, status, comments]);
 
 		// Update available spots
 		const updateAvailabilityQuery = `
@@ -74,7 +78,7 @@ export const create = async ({ user_id, trip_id, trip_date, num_people, status =
 
 		await dbPool.executeQuery(updateAvailabilityQuery, [num_people, trip_id, trip_date, trip_date]);
 
-		return result.insertId;
+		return id;
 	} catch (error) {
 		throw new Error(`Error creating booking: ${error.message}`);
 	}
@@ -82,7 +86,7 @@ export const create = async ({ user_id, trip_id, trip_date, num_people, status =
 
 /**
  * Update booking data
- * @param {number} id - Booking ID
+ * @param {string} id - Booking UUID
  * @param {Object} updateData - Data to update
  * @returns {Promise<boolean>} True if updated, false otherwise
  */
@@ -205,7 +209,7 @@ export const update = async (id, updateData) => {
 
 /**
  * Remove booking
- * @param {number} id - Booking ID
+ * @param {string} id - Booking UUID
  * @returns {Promise<boolean>} True if removed, false otherwise
  */
 export const remove = async (id) => {
@@ -238,8 +242,8 @@ export const remove = async (id) => {
 /**
  * Find bookings by multiple criteria
  * @param {Object} filters - Search filters
- * @param {number} filters.user_id - Filter by user ID
- * @param {number} filters.trip_id - Filter by trip ID
+ * @param {string} filters.user_id - Filter by user ID
+ * @param {string} filters.trip_id - Filter by trip ID
  * @param {string} filters.status - Filter by status
  * @param {string} filters.start_date - Filter by bookings after this date
  * @param {string} filters.end_date - Filter by bookings before this date
@@ -320,8 +324,8 @@ export const findByFilters = async ({
 /**
  * Count bookings by filters
  * @param {Object} filters - Search filters
- * @param {number} filters.user_id - Filter by user ID
- * @param {number} filters.trip_id - Filter by trip ID
+ * @param {string} filters.user_id - Filter by user ID
+ * @param {string} filters.trip_id - Filter by trip ID
  * @param {string} filters.status - Filter by status
  * @param {string} filters.start_date - Filter by bookings after this date
  * @param {string} filters.end_date - Filter by bookings before this date
@@ -366,7 +370,7 @@ export const countByFilters = async ({ user_id, trip_id, status, start_date, end
 
 /**
  * Get bookings by user ID
- * @param {number} userId - User ID
+ * @param {string} userId - User UUID
  * @param {number} limit - Results limit
  * @param {number} offset - Results offset
  * @returns {Promise<Array>} Array of user's bookings
@@ -381,7 +385,7 @@ export const findByUserId = async (userId, limit = 10, offset = 0) => {
 
 /**
  * Get bookings by trip ID
- * @param {number} tripId - Trip ID
+ * @param {string} tripId - Trip UUID
  * @param {number} limit - Results limit
  * @param {number} offset - Results offset
  * @returns {Promise<Array>} Array of trip's bookings

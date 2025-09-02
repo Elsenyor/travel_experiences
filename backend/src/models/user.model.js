@@ -1,8 +1,9 @@
 import dbPool from "../utils/database.pool.js";
+import { generateUUID } from "../utils/uuid.service.js";
 
 /**
  * Find user by ID
- * @param {number} id - User ID
+ * @param {string} id - User UUID
  * @returns {Promise<Object|null>} User object or null if not found
  */
 export const findById = async (id) => {
@@ -22,12 +23,15 @@ export const findById = async (id) => {
  * @param {string} userData.email - User email
  * @param {string} userData.password - User password (hashed)
  * @param {string} userData.role - User role (default: "user")
- * @returns {Promise<number>} Created user ID
+ * @returns {Promise<string>} Created user ID (UUID)
  */
 export const create = async ({ name, email, password, role = "user" }) => {
+	// Generate UUID for new user
+	const id = generateUUID();
+
 	const queries = [
 		["SELECT id FROM users WHERE email = ?", [email]],
-		["INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", [name, email, password, role]],
+		["INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)", [id, name, email, password, role]],
 	];
 
 	try {
@@ -35,7 +39,7 @@ export const create = async ({ name, email, password, role = "user" }) => {
 		if (results[0].length > 0) {
 			throw new Error("Email already exists");
 		}
-		return results[1].insertId;
+		return id;
 	} catch (error) {
 		throw new Error(`Error creating user: ${error.message}`);
 	}
@@ -43,7 +47,7 @@ export const create = async ({ name, email, password, role = "user" }) => {
 
 /**
  * Update user data
- * @param {number} id - User ID
+ * @param {string} id - User UUID
  * @param {Object} updateData - Data to update
  * @returns {Promise<boolean>} True if updated, false otherwise
  */
@@ -74,7 +78,7 @@ export const update = async (id, updateData) => {
 
 /**
  * Remove user
- * @param {number} id - User ID
+ * @param {string} id - User UUID
  * @returns {Promise<boolean>} True if removed, false otherwise
  */
 export const remove = async (id) => {
@@ -158,6 +162,21 @@ export const countByFilters = async ({ role, searchTerm }) => {
 	}
 };
 
+/**
+ * Find user by email
+ * @param {string} email - User email
+ * @returns {Promise<Object|null>} User object or null if not found
+ */
+export const findByEmail = async (email) => {
+	const query = "SELECT id, name, email, password, role, created_at FROM users WHERE email = ?";
+	try {
+		const user = await dbPool.executeQuery(query, [email]);
+		return user[0] || null;
+	} catch (error) {
+		throw new Error(`Error finding user by email: ${error.message}`);
+	}
+};
+
 export default {
 	findById,
 	create,
@@ -165,4 +184,5 @@ export default {
 	remove,
 	findByFilters,
 	countByFilters,
+	findByEmail,
 };

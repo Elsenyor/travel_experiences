@@ -1,109 +1,67 @@
 import jwt from "jsonwebtoken";
-import { AppError } from "../middlewares/error.middleware.js";
+import dotenv from "dotenv";
+import { isValidUUID } from "./uuid.service.js";
 
-// Token secrets
-const accessTokenSecret = process.env.SECRET;
-const refreshTokenSecret = process.env.REFRESH_SECRET;
+dotenv.config();
 
-// Token configuration
-const accessTokenConfig = {
-	expiresIn: "30m", // Access token expires in 30 minutes
-};
-
-const refreshTokenConfig = {
-	expiresIn: "7d", // Refresh token expires in 7 days
-};
+const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "your-refresh-secret-key";
+const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "7d";
 
 /**
- * Generates an access token
- * @param {Object} payload - Data to be included in the token
- * @returns {string} JWT Token
+ * Generate JWT token
+ * @param {Object} payload - Token payload
+ * @param {string} payload.userId - User ID (UUID)
+ * @param {string} payload.email - User email
+ * @param {string} payload.role - User role
+ * @returns {string} JWT token
  */
-export const generateAccessToken = (payload) => {
-	try {
-		return jwt.sign(payload, accessTokenSecret, accessTokenConfig);
-	} catch (error) {
-		throw new AppError("Error generating access token", 500);
+export const generateToken = (payload) => {
+	// Validate that userId is a valid UUID
+	if (!isValidUUID(payload.userId)) {
+		throw new Error("Invalid user ID format");
 	}
+
+	return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
 /**
- * Generates a refresh token
- * @param {Object} payload - Data to be included in the token
- * @returns {string} JWT Refresh Token
+ * Generate refresh token
+ * @param {Object} payload - Token payload
+ * @param {string} payload.userId - User ID (UUID)
+ * @returns {string} Refresh token
  */
 export const generateRefreshToken = (payload) => {
-	try {
-		return jwt.sign(payload, refreshTokenSecret, refreshTokenConfig);
-	} catch (error) {
-		throw new AppError("Error generating refresh token", 500);
+	// Validate that userId is a valid UUID
+	if (!isValidUUID(payload.userId)) {
+		throw new Error("Invalid user ID format");
 	}
+
+	return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
 };
 
 /**
- * Verifies an access token
- * @param {string} token - JWT token to verify
- * @returns {Object} Decoded payload
+ * Verify JWT token
+ * @param {string} token - JWT token
+ * @returns {Object} Decoded token payload
  */
-export const verifyAccessToken = (token) => {
-	try {
-		return jwt.verify(token, accessTokenSecret);
-	} catch (error) {
-		if (error.name === "TokenExpiredError") {
-			throw new AppError("Token expired", 401);
-		}
-		throw new AppError("Invalid token", 401);
-	}
+export const verifyToken = (token) => {
+	return jwt.verify(token, JWT_SECRET);
 };
 
 /**
- * Verifies a refresh token
- * @param {string} token - Refresh token to verify
- * @returns {Object} Decoded payload
+ * Verify refresh token
+ * @param {string} token - Refresh token
+ * @returns {Object} Decoded token payload
  */
 export const verifyRefreshToken = (token) => {
-	try {
-		return jwt.verify(token, refreshTokenSecret);
-	} catch (error) {
-		if (error.name === "TokenExpiredError") {
-			throw new AppError("Refresh token expired", 401);
-		}
-		throw new AppError("Invalid refresh token", 401);
-	}
-};
-
-/**
- * Generates a pair of tokens (access + refresh)
- * @param {Object} payload - Data to be included in both tokens
- * @returns {Object} Object containing both tokens
- */
-export const generateTokenPair = (payload) => {
-	const accessToken = generateAccessToken(payload);
-	const refreshToken = generateRefreshToken(payload);
-
-	return {
-		accessToken,
-		refreshToken,
-	};
-};
-
-/**
- * Extracts token from authorization header
- * @param {string} authHeader - Authorization header
- * @returns {string} Extracted token
- */
-export const extractTokenFromHeader = (authHeader) => {
-	if (!authHeader?.startsWith("Bearer ")) {
-		throw new AppError("No token provided", 401);
-	}
-	return authHeader.split(" ")[1];
+	return jwt.verify(token, JWT_REFRESH_SECRET);
 };
 
 export default {
-	generateAccessToken,
+	generateToken,
 	generateRefreshToken,
-	verifyAccessToken,
+	verifyToken,
 	verifyRefreshToken,
-	generateTokenPair,
-	extractTokenFromHeader,
 };
