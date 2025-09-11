@@ -18,6 +18,7 @@ import articlesRoutes from "./routes/articles.routes.js";
 import tagsRoutes from "./routes/tags.routes.js";
 import newsletterRoutes from "./routes/newsletter.routes.js";
 import bookingsRoutes from "./routes/bookings.routes.js";
+import tripsRoutes from "./routes/trips.routes.js";
 
 dotenv.config();
 
@@ -91,6 +92,7 @@ app.use("/api/v1/articles", articlesRoutes); // Articles routes
 app.use("/api/v1/tags", tagsRoutes); // Tags routes
 app.use("/api/v1/newsletter", newsletterRoutes); // Newsletter routes
 app.use("/api/v1/bookings", bookingsRoutes); // Bookings routes
+app.use("/api/v1/trips", tripsRoutes); // Trips routes
 
 // 404 handler
 app.all("*", (req, res, next) => {
