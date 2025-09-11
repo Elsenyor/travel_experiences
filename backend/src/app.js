@@ -19,6 +19,8 @@ import tagsRoutes from "./routes/tags.routes.js";
 import newsletterRoutes from "./routes/newsletter.routes.js";
 import bookingsRoutes from "./routes/bookings.routes.js";
 import tripsRoutes from "./routes/trips.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
+import faqRoutes from "./routes/faq.routes.js";
 
 dotenv.config();
 
@@ -93,6 +95,8 @@ app.use("/api/v1/tags", tagsRoutes); // Tags routes
 app.use("/api/v1/newsletter", newsletterRoutes); // Newsletter routes
 app.use("/api/v1/bookings", bookingsRoutes); // Bookings routes
 app.use("/api/v1/trips", tripsRoutes); // Trips routes
+app.use("/api/v1/chat", chatRoutes); // Chat routes
+app.use("/api/v1/faqs", faqRoutes); // FAQ routes
 
 // 404 handler
 app.all("*", (req, res, next) => {
