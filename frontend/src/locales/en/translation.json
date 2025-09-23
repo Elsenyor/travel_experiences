@@ -1,0 +1,146 @@
+{
+	"common": {
+		"loading": "Loading...",
+		"error": "An error has occurred",
+		"success": "Operation successful",
+		"save": "Save",
+		"cancel": "Cancel",
+		"edit": "Edit",
+		"delete": "Delete",
+		"back": "Back",
+		"next": "Next",
+		"previous": "Previous",
+		"search": "Search",
+		"filter": "Filter",
+		"sort": "Sort",
+		"all": "All",
+		"none": "None",
+		"yes": "Yes",
+		"no": "No"
+	},
+	"navigation": {
+		"home": "Home",
+		"trips": "Trips",
+		"blog": "Blog",
+		"about": "About us",
+		"contact": "Contact",
+		"login": "Login",
+		"register": "Register",
+		"profile": "My profile",
+		"bookings": "My bookings",
+		"logout": "Logout"
+	},
+	"auth": {
+		"login": "Login",
+		"register": "Register",
+		"logout": "Logout",
+		"email": "Email",
+		"password": "Password",
+		"confirmPassword": "Confirm password",
+		"name": "Name",
+		"forgotPassword": "Forgot your password?",
+		"resetPassword": "Reset password",
+		"noAccount": "Don't have an account?",
+		"haveAccount": "Already have an account?",
+		"loginWithGoogle": "Login with Google",
+		"registerWithGoogle": "Register with Google"
+	},
+	"home": {
+		"hero": {
+			"title": "Discover Asia",
+			"subtitle": "Unique and authentic experiences across the Asian continent",
+			"cta": "Explore destinations"
+		},
+		"featured": {
+			"title": "Featured trips",
+			"viewAll": "View all trips"
+		},
+		"testimonials": {
+			"title": "What our travelers say"
+		},
+		"blog": {
+			"title": "Latest posts",
+			"readMore": "Read more"
+		},
+		"newsletter": {
+			"title": "Subscribe to our newsletter",
+			"subtitle": "Receive the latest news and special offers",
+			"placeholder": "Your email",
+			"button": "Subscribe",
+			"success": "Thank you for subscribing!",
+			"error": "An error occurred. Please try again."
+		}
+	},
+	"trips": {
+		"filters": {
+			"title": "Filters",
+			"destination": "Destination",
+			"type": "Trip type",
+			"duration": "Duration",
+			"price": "Price",
+			"dates": "Dates",
+			"apply": "Apply filters",
+			"clear": "Clear filters"
+		},
+		"sort": {
+			"title": "Sort by",
+			"priceAsc": "Price: low to high",
+			"priceDesc": "Price: high to low",
+			"durationAsc": "Duration: short to long",
+			"durationDesc": "Duration: long to short",
+			"popularity": "Popularity"
+		},
+		"card": {
+			"from": "From",
+			"duration": "{{days}} days",
+			"viewDetails": "View details",
+			"bookNow": "Book now"
+		},
+		"detail": {
+			"included": "Included",
+			"notIncluded": "Not included",
+			"itinerary": "Itinerary",
+			"accommodation": "Accommodation",
+			"dates": "Available dates",
+			"book": "Book",
+			"relatedTrips": "Related trips"
+		}
+	},
+	"booking": {
+		"title": "Book your trip",
+		"personalInfo": "Personal information",
+		"tripDetails": "Trip details",
+		"paymentInfo": "Payment information",
+		"confirmation": "Confirmation",
+		"success": "Booking completed successfully!",
+		"error": "An error occurred while processing your booking",
+		"summary": {
+			"title": "Booking summary",
+			"trip": "Trip",
+			"dates": "Dates",
+			"travelers": "Travelers",
+			"price": "Price",
+			"total": "Total"
+		}
+	},
+	"profile": {
+		"title": "My profile",
+		"personalInfo": "Personal information",
+		"bookings": "My bookings",
+		"preferences": "Preferences",
+		"changePassword": "Change password",
+		"deleteAccount": "Delete account"
+	},
+	"chat": {
+		"title": "Support chat",
+		"placeholder": "Type your message...",
+		"send": "Send",
+		"startConversation": "Start a conversation with us",
+		"agentJoined": "An agent has joined the conversation",
+		"agentLeft": "The agent has left the conversation"
+	},
+	"faq": {
+		"title": "Frequently asked questions",
+		"searchPlaceholder": "Search questions..."
+	}
+}
