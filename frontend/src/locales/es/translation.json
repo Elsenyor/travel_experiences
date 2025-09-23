@@ -1,4 +1,10 @@
 {
+	"validation": {
+		"required": "Este campo es obligatorio",
+		"invalidEmail": "Por favor, introduce un correo electrónico válido",
+		"passwordLength": "La contraseña debe tener al menos 8 caracteres",
+		"passwordsDoNotMatch": "Las contraseñas no coinciden"
+	},
 	"common": {
 		"loading": "Cargando...",
 		"error": "Ha ocurrido un error",
@@ -16,7 +22,8 @@
 		"all": "Todos",
 		"none": "Ninguno",
 		"yes": "Sí",
-		"no": "No"
+		"no": "No",
+		"or": "o"
 	},
 	"navigation": {
 		"home": "Inicio",
@@ -43,7 +50,19 @@
 		"noAccount": "¿No tienes una cuenta?",
 		"haveAccount": "¿Ya tienes una cuenta?",
 		"loginWithGoogle": "Iniciar sesión con Google",
-		"registerWithGoogle": "Registrarse con Google"
+		"registerWithGoogle": "Registrarse con Google",
+		"googleLogin": "Acceso con Google",
+		"googleLoginFailed": "El acceso con Google ha fallado",
+		"invalidToken": "Token inválido o expirado",
+		"googleLoginError": "Error al iniciar sesión con Google",
+		"backToLogin": "Volver a iniciar sesión",
+		"resetPasswordError": "Error al restablecer la contraseña",
+		"resetPasswordSuccess": "Se ha enviado un enlace a tu correo electrónico",
+		"resetPasswordInstructions": "Por favor, revisa tu correo electrónico y sigue las instrucciones para restablecer tu contraseña.",
+		"resetPasswordDescription": "Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.",
+		"enterNewPassword": "Ingresa tu nueva contraseña",
+		"passwordResetSuccess": "¡Tu contraseña ha sido restablecida con éxito!",
+		"redirectingToLogin": "Redirigiendo a la página de inicio de sesión..."
 	},
 	"home": {
 		"hero": {

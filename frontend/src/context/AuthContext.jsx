@@ -1,12 +1,10 @@
 import { createContext, useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import * as authService from "../services/auth.service.js";
+import * as userService from "../services/user.service.js";
 
 /* eslint-disable react-refresh/only-export-components */
 // Create the authentication context
 export const AuthContext = createContext(null);
-
-// API URL from environment variables or default
-const API_URL = import.meta.env.VITE_API_URL;
 
 export const AuthProvider = ({ children }) => {
 	const [user, setUser] = useState(null);
@@ -19,16 +17,13 @@ export const AuthProvider = ({ children }) => {
 			try {
 				setLoading(true);
 				// Try to get current user data using the refresh token (stored in HTTP-only cookie)
-				const response = await axios.get(`${API_URL}/auth/me`, {
-					withCredentials: true, // Important for cookies
-				});
+				const response = await authService.getCurrentUser();
 
 				if (response.data.status === "success") {
 					setUser(response.data.data);
 				}
 			} catch (err) {
 				// If error, user is not authenticated
-				//toast error subtitute console.error
 				console.error(err);
 				setUser(null);
 			} finally {
@@ -45,11 +40,7 @@ export const AuthProvider = ({ children }) => {
 			setLoading(true);
 			setError(null);
 
-			const response = await axios.post(
-				`${API_URL}/auth/login`,
-				{ email, password },
-				{ withCredentials: true } // Important for cookies
-			);
+			const response = await authService.login({ email, password });
 
 			if (response.data.status === "success") {
 				setUser(response.data.data.user);
@@ -69,7 +60,7 @@ export const AuthProvider = ({ children }) => {
 			setLoading(true);
 			setError(null);
 
-			const response = await axios.post(`${API_URL}/auth/register`, userData, { withCredentials: true });
+			const response = await authService.register(userData);
 
 			if (response.data.status === "success") {
 				setUser(response.data.data.user);
@@ -89,7 +80,7 @@ export const AuthProvider = ({ children }) => {
 			setLoading(true);
 			setError(null);
 
-			const response = await axios.post(`${API_URL}/auth/google/login`, { tokenId }, { withCredentials: true });
+			const response = await authService.googleLogin(tokenId);
 
 			if (response.data.status === "success") {
 				setUser(response.data.data.user);
@@ -108,7 +99,7 @@ export const AuthProvider = ({ children }) => {
 		try {
 			setLoading(true);
 
-			await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+			await authService.logout();
 
 			setUser(null);
 			return true;
@@ -126,7 +117,7 @@ export const AuthProvider = ({ children }) => {
 			setLoading(true);
 			setError(null);
 
-			const response = await axios.patch(`${API_URL}/users/me`, userData, { withCredentials: true });
+			const response = await userService.updateProfile(userData);
 
 			if (response.data.status === "success") {
 				setUser(response.data.data);
@@ -146,7 +137,7 @@ export const AuthProvider = ({ children }) => {
 			setLoading(true);
 			setError(null);
 
-			const response = await axios.patch(`${API_URL}/users/password`, { currentPassword, newPassword }, { withCredentials: true });
+			const response = await userService.changePassword({ currentPassword, newPassword });
 
 			if (response.data.status === "success") {
 				return true;
