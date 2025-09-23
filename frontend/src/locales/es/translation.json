@@ -1,0 +1,146 @@
+{
+	"common": {
+		"loading": "Cargando...",
+		"error": "Ha ocurrido un error",
+		"success": "Operación exitosa",
+		"save": "Guardar",
+		"cancel": "Cancelar",
+		"edit": "Editar",
+		"delete": "Eliminar",
+		"back": "Volver",
+		"next": "Siguiente",
+		"previous": "Anterior",
+		"search": "Buscar",
+		"filter": "Filtrar",
+		"sort": "Ordenar",
+		"all": "Todos",
+		"none": "Ninguno",
+		"yes": "Sí",
+		"no": "No"
+	},
+	"navigation": {
+		"home": "Inicio",
+		"trips": "Viajes",
+		"blog": "Blog",
+		"about": "Sobre nosotros",
+		"contact": "Contacto",
+		"login": "Iniciar sesión",
+		"register": "Registrarse",
+		"profile": "Mi perfil",
+		"bookings": "Mis reservas",
+		"logout": "Cerrar sesión"
+	},
+	"auth": {
+		"login": "Iniciar sesión",
+		"register": "Registrarse",
+		"logout": "Cerrar sesión",
+		"email": "Correo electrónico",
+		"password": "Contraseña",
+		"confirmPassword": "Confirmar contraseña",
+		"name": "Nombre",
+		"forgotPassword": "¿Olvidaste tu contraseña?",
+		"resetPassword": "Restablecer contraseña",
+		"noAccount": "¿No tienes una cuenta?",
+		"haveAccount": "¿Ya tienes una cuenta?",
+		"loginWithGoogle": "Iniciar sesión con Google",
+		"registerWithGoogle": "Registrarse con Google"
+	},
+	"home": {
+		"hero": {
+			"title": "Descubre Asia",
+			"subtitle": "Experiencias únicas y auténticas en el continente asiático",
+			"cta": "Explorar destinos"
+		},
+		"featured": {
+			"title": "Viajes destacados",
+			"viewAll": "Ver todos los viajes"
+		},
+		"testimonials": {
+			"title": "Lo que dicen nuestros viajeros"
+		},
+		"blog": {
+			"title": "Últimas publicaciones",
+			"readMore": "Leer más"
+		},
+		"newsletter": {
+			"title": "Suscríbete a nuestra newsletter",
+			"subtitle": "Recibe las últimas novedades y ofertas especiales",
+			"placeholder": "Tu correo electrónico",
+			"button": "Suscribirse",
+			"success": "¡Gracias por suscribirte!",
+			"error": "Ha ocurrido un error. Inténtalo de nuevo."
+		}
+	},
+	"trips": {
+		"filters": {
+			"title": "Filtros",
+			"destination": "Destino",
+			"type": "Tipo de viaje",
+			"duration": "Duración",
+			"price": "Precio",
+			"dates": "Fechas",
+			"apply": "Aplicar filtros",
+			"clear": "Limpiar filtros"
+		},
+		"sort": {
+			"title": "Ordenar por",
+			"priceAsc": "Precio: menor a mayor",
+			"priceDesc": "Precio: mayor a menor",
+			"durationAsc": "Duración: menor a mayor",
+			"durationDesc": "Duración: mayor a menor",
+			"popularity": "Popularidad"
+		},
+		"card": {
+			"from": "Desde",
+			"duration": "{{days}} días",
+			"viewDetails": "Ver detalles",
+			"bookNow": "Reservar ahora"
+		},
+		"detail": {
+			"included": "Incluido",
+			"notIncluded": "No incluido",
+			"itinerary": "Itinerario",
+			"accommodation": "Alojamiento",
+			"dates": "Fechas disponibles",
+			"book": "Reservar",
+			"relatedTrips": "Viajes relacionados"
+		}
+	},
+	"booking": {
+		"title": "Reserva tu viaje",
+		"personalInfo": "Información personal",
+		"tripDetails": "Detalles del viaje",
+		"paymentInfo": "Información de pago",
+		"confirmation": "Confirmación",
+		"success": "¡Reserva completada con éxito!",
+		"error": "Ha ocurrido un error al procesar tu reserva",
+		"summary": {
+			"title": "Resumen de la reserva",
+			"trip": "Viaje",
+			"dates": "Fechas",
+			"travelers": "Viajeros",
+			"price": "Precio",
+			"total": "Total"
+		}
+	},
+	"profile": {
+		"title": "Mi perfil",
+		"personalInfo": "Información personal",
+		"bookings": "Mis reservas",
+		"preferences": "Preferencias",
+		"changePassword": "Cambiar contraseña",
+		"deleteAccount": "Eliminar cuenta"
+	},
+	"chat": {
+		"title": "Chat de soporte",
+		"placeholder": "Escribe tu mensaje...",
+		"send": "Enviar",
+		"startConversation": "Inicia una conversación con nosotros",
+		"agentJoined": "Un agente se ha unido a la conversación",
+		"agentLeft": "El agente ha abandonado la conversación"
+	},
+	"faq": {
+		"title": "Preguntas frecuentes",
+		"searchPlaceholder": "Buscar preguntas..."
+	}
+}
