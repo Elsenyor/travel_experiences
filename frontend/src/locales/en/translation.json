@@ -1,4 +1,10 @@
 {
+	"validation": {
+		"required": "This field is required",
+		"invalidEmail": "Please enter a valid email address",
+		"passwordLength": "Password must be at least 8 characters long",
+		"passwordsDoNotMatch": "Passwords do not match"
+	},
 	"common": {
 		"loading": "Loading...",
 		"error": "An error has occurred",
@@ -16,7 +22,8 @@
 		"all": "All",
 		"none": "None",
 		"yes": "Yes",
-		"no": "No"
+		"no": "No",
+		"or": "or"
 	},
 	"navigation": {
 		"home": "Home",
@@ -43,7 +50,19 @@
 		"noAccount": "Don't have an account?",
 		"haveAccount": "Already have an account?",
 		"loginWithGoogle": "Login with Google",
-		"registerWithGoogle": "Register with Google"
+		"registerWithGoogle": "Register with Google",
+		"googleLogin": "Google Login",
+		"googleLoginFailed": "Google login failed",
+		"invalidToken": "Invalid or expired token",
+		"googleLoginError": "Error logging in with Google",
+		"backToLogin": "Back to login",
+		"resetPasswordError": "Error resetting password",
+		"resetPasswordSuccess": "A link has been sent to your email",
+		"resetPasswordInstructions": "Please check your email and follow the instructions to reset your password.",
+		"resetPasswordDescription": "Enter your email and we'll send you instructions to reset your password.",
+		"enterNewPassword": "Enter your new password",
+		"passwordResetSuccess": "Your password has been reset successfully!",
+		"redirectingToLogin": "Redirecting to login page..."
 	},
 	"home": {
 		"hero": {
