@@ -41,10 +41,12 @@ const AppRoutes = () => {
 			<Route path="/auth">
 				<Route path="login" element={<Login />} />
 				<Route path="register" element={<Register />} />
-				<Route path="forgot-password" element={<ForgotPassword />} />
-				<Route path="reset-password/:token" element={<ResetPassword />} />
 				<Route path="google-callback" element={<GoogleLogin />} />
 			</Route>
+
+			{/* Public auth routes */}
+			<Route path="/auth/forgot-password" element={<ForgotPassword />} />
+			<Route path="/auth/reset-password/:token" element={<ResetPassword />} />
 
 			{/* Protected routes */}
 			<Route element={<ProtectedRoute />}>

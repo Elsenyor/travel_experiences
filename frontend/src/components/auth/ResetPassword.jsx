@@ -1,9 +1,12 @@
-import { useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 // Material UI components
 import { Box, Button, TextField, Typography, Container, Paper, Alert, CircularProgress } from "@mui/material";
+
+// Services
+import * as authService from "../../services/auth.service.js";
 
 /**
  * ResetPassword component
@@ -58,6 +61,13 @@ const ResetPassword = () => {
 		return Object.keys(errors).length === 0;
 	};
 
+	// Validate token on component mount
+	useEffect(() => {
+		if (!token) {
+			setError(t("auth.invalidOrExpiredToken"));
+		}
+	}, [token, t]);
+
 	// Handle form submission
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -66,11 +76,15 @@ const ResetPassword = () => {
 			return;
 		}
 
+		if (!token) {
+			setError(t("auth.invalidOrExpiredToken"));
+			return;
+		}
+
 		try {
 			setLoading(true);
-			// In a real implementation, you would call an API endpoint with the token and new password
-			// For now, we'll just simulate success after a delay
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			// Call the API endpoint with the token and new password
+			await authService.resetPassword(token, formData.password);
 			setSuccess(true);
 
 			// Redirect to login after 3 seconds
@@ -79,8 +93,12 @@ const ResetPassword = () => {
 			}, 3000);
 		} catch (err) {
 			console.error("Error al restablecer contraseña:", err);
-			// Aquí iría un toast en el futuro
-			setError(t("auth.resetPasswordError"));
+			// Set appropriate error message based on response
+			if (err.response?.status === 400) {
+				setError(t("auth.invalidOrExpiredToken"));
+			} else {
+				setError(t("auth.resetPasswordError"));
+			}
 		} finally {
 			setLoading(false);
 		}
