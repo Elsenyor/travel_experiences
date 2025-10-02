@@ -14,3 +14,7 @@ export const logout = () => apiClient.post("/auth/logout");
 export const getCurrentUser = () => apiClient.get("/auth/me");
 
 export const refreshToken = () => apiClient.post("/auth/refresh-token");
+
+export const forgotPassword = (email) => apiClient.post("/auth/forgot-password", { email });
+
+export const resetPassword = (token, password) => apiClient.post("/auth/reset-password", { token, password });

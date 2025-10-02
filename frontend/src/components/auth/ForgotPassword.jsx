@@ -5,6 +5,9 @@ import { useTranslation } from "react-i18next";
 // Material UI components
 import { Box, Button, TextField, Typography, Container, Paper, Alert, CircularProgress } from "@mui/material";
 
+// Services
+import * as authService from "../../services/auth.service.js";
+
 /**
  * ForgotPassword component
  */
@@ -32,14 +35,17 @@ const ForgotPassword = () => {
 
 		try {
 			setLoading(true);
-			// In a real implementation, you would call an API endpoint
-			// For now, we'll just simulate success after a delay
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			// Call the API endpoint to request password reset
+			await authService.forgotPassword(email);
 			setSuccess(true);
 		} catch (err) {
 			console.error("Error al solicitar restablecimiento de contraseña:", err);
-			// Aquí iría un toast en el futuro
-			setError(t("auth.resetPasswordError"));
+			// Set appropriate error message based on response
+			if (err.response?.status === 404) {
+				setError(t("auth.emailNotFound"));
+			} else {
+				setError(t("auth.resetPasswordError"));
+			}
 		} finally {
 			setLoading(false);
 		}

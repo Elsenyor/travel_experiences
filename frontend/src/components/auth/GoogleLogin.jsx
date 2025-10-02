@@ -20,8 +20,7 @@ const GoogleLogin = () => {
 	useEffect(() => {
 		const processGoogleLogin = async () => {
 			try {
-				// In a real implementation, you would extract the token from the URL
-				// and pass it to the googleLogin function
+				// Extraemos el token de Google del parámetro de la URL
 				const urlParams = new URLSearchParams(window.location.search);
 				const tokenId = urlParams.get("token");
 

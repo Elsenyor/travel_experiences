@@ -42,11 +42,16 @@ const Login = () => {
 	// Handle Google login
 	const handleGoogleLogin = async () => {
 		try {
-			// En una implementación real, obtendríamos el token de Google OAuth
-			// y lo pasaríamos a la función googleLogin
-			// Por ahora, simulamos un error para mostrar el flujo completo
-			const mockTokenId = "mock_token_for_development";
-			const success = await googleLogin(mockTokenId);
+			// Integramos con la API de Google OAuth para obtener el token
+			// Esto requiere configurar Google OAuth en el proyecto
+			// y usar la librería @react-oauth/google
+			const tokenId = await window.gapi?.auth2?.getAuthInstance()?.currentUser?.get()?.getAuthResponse()?.id_token;
+
+			if (!tokenId) {
+				throw new Error("No se pudo obtener el token de Google");
+			}
+
+			const success = await googleLogin(tokenId);
 
 			if (success) {
 				navigate("/");
