@@ -1,5 +1,6 @@
 import { BrowserRouter } from "react-router-dom";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./context/AuthContext";
 import AppRoutes from "./routes/AppRoutes";
 
@@ -24,14 +25,16 @@ const theme = createTheme({
  */
 function App() {
 	return (
-		<BrowserRouter>
-			<ThemeProvider theme={theme}>
-				<CssBaseline />
-				<AuthProvider>
-					<AppRoutes />
-				</AuthProvider>
-			</ThemeProvider>
-		</BrowserRouter>
+		<HelmetProvider>
+			<BrowserRouter>
+				<ThemeProvider theme={theme}>
+					<CssBaseline />
+					<AuthProvider>
+						<AppRoutes />
+					</AuthProvider>
+				</ThemeProvider>
+			</BrowserRouter>
+		</HelmetProvider>
 	);
 }
 
