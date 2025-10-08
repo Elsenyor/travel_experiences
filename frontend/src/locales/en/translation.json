@@ -161,5 +161,24 @@
 	"faq": {
 		"title": "Frequently asked questions",
 		"searchPlaceholder": "Search questions..."
+	},
+	"footer": {
+		"about": {
+			"title": "About Us",
+			"description": "Experts in personalized trips across Asia. We offer unique and authentic experiences."
+		},
+		"quickLinks": "Quick Links",
+		"destinations": "Destinations",
+		"contact": {
+			"title": "Contact",
+			"address": "Address",
+			"phone": "Phone",
+			"email": "Email",
+			"hours": "Hours"
+		},
+		"social": "Follow Us",
+		"copyright": "© {{year}} Asia Experiences. All rights reserved.",
+		"privacy": "Privacy Policy",
+		"terms": "Terms & Conditions"
 	}
 }
