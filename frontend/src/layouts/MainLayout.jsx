@@ -1,27 +1,26 @@
 import { Outlet } from "react-router-dom";
-import { Box } from "@mui/material";
+import Header from "../components/layout/Header";
+import Footer from "../components/layout/Footer";
 
 /**
  * MainLayout component
  * This component provides the main layout for the application
- * It will contain the header, navigation, footer, etc.
+ * It includes the header, main content area, and footer
  */
 const MainLayout = () => {
 	return (
-		<Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-			{/* Header will go here */}
-			<Box component="header">{/* Navbar will go here */}</Box>
+		<div className="d-flex flex-column min-vh-100">
+			{/* Header */}
+			<Header />
 
 			{/* Main content */}
-			<Box component="main" sx={{ flexGrow: 1, py: 3 }}>
+			<main className="flex-grow-1">
 				<Outlet />
-			</Box>
+			</main>
 
-			{/* Footer will go here */}
-			<Box component="footer" sx={{ py: 3, bgcolor: "background.paper" }}>
-				{/* Footer content will go here */}
-			</Box>
-		</Box>
+			{/* Footer */}
+			<Footer />
+		</div>
 	);
 };
 
