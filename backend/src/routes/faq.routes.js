@@ -1,10 +1,16 @@
 import express from "express";
-import { authenticate } from "../middlewares/auth.middleware.js";
-import { handleContentRange } from "../middlewares/content-range.middleware.js";
+import { authenticateToken, checkRole } from "../middlewares/auth.middleware.js";
+import { handleReactAdminParams } from "../middlewares/react-admin.middleware.js";
 import { handleBulkOperations } from "../middlewares/bulk-operations.middleware.js";
+import { parseRelationParams } from "../middlewares/relations.middleware.js";
 import faqController from "../controllers/faq.controller.js";
 
 const router = express.Router();
+
+// Apply React Admin middleware to all routes
+router.use(handleReactAdminParams);
+router.use(handleBulkOperations);
+router.use(parseRelationParams);
 
 /**
  * @swagger
@@ -62,7 +68,7 @@ const router = express.Router();
  *                   items:
  *                     $ref: '#/components/schemas/FAQ'
  */
-router.get("/", handleContentRange, faqController.getAllFaqs);
+router.get("/", faqController.getAllFaqs);
 
 /**
  * @swagger
@@ -151,7 +157,7 @@ router.get("/:id", faqController.getFaqById);
  *       401:
  *         description: Unauthorized
  */
-router.post("/", authenticate, faqController.createFaq);
+router.post("/", authenticateToken, checkRole("admin"), faqController.createFaq);
 
 /**
  * @swagger
@@ -205,7 +211,43 @@ router.post("/", authenticate, faqController.createFaq);
  *       404:
  *         description: FAQ not found
  */
-router.put("/:id/translations", authenticate, faqController.updateFaqTranslation);
+/**
+ * @swagger
+ * /api/v1/faqs/{id}:
+ *   put:
+ *     summary: Update FAQ
+ *     tags: [FAQs]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: FAQ ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               order_position:
+ *                 type: integer
+ *               translations:
+ *                 type: array
+ *     responses:
+ *       200:
+ *         description: FAQ updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: FAQ not found
+ */
+router.put("/:id", authenticateToken, checkRole("admin"), faqController.updateFaq);
+
+router.put("/:id/translations", authenticateToken, checkRole("admin"), faqController.updateFaqTranslation);
 
 /**
  * @swagger
@@ -230,9 +272,62 @@ router.put("/:id/translations", authenticate, faqController.updateFaqTranslation
  *       404:
  *         description: FAQ not found
  */
-router.delete("/:id", authenticate, faqController.deleteFaq);
+router.delete("/:id", authenticateToken, checkRole("admin"), faqController.deleteFaq);
 
-// Handle bulk operations for React Admin
-router.use(handleBulkOperations);
+/**
+ * @swagger
+ * /api/v1/faqs/bulk/delete:
+ *   post:
+ *     summary: Bulk delete FAQs
+ *     tags: [FAQs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: FAQs deleted successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/bulk/delete", authenticateToken, checkRole("admin"), faqController.bulkDeleteFaqs);
+
+/**
+ * @swagger
+ * /api/v1/faqs/bulk/update:
+ *   post:
+ *     summary: Bulk update FAQs
+ *     tags: [FAQs]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               data:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: FAQs updated successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/bulk/update", authenticateToken, checkRole("admin"), faqController.bulkUpdateFaqs);
 
 export default router;

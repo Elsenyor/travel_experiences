@@ -1,11 +1,16 @@
 import express from "express";
-import { authenticate } from "../middlewares/auth.middleware.js";
-import { handleContentRange } from "../middlewares/content-range.middleware.js";
+import { authenticateToken, checkRole } from "../middlewares/auth.middleware.js";
+import { handleReactAdminParams } from "../middlewares/react-admin.middleware.js";
 import { handleBulkOperations } from "../middlewares/bulk-operations.middleware.js";
-import { handleRelations } from "../middlewares/relations.middleware.js";
+import { parseRelationParams } from "../middlewares/relations.middleware.js";
 import tripsController from "../controllers/trips.controller.js";
 
 const router = express.Router();
+
+// Apply React Admin middleware to all routes
+router.use(handleReactAdminParams);
+router.use(handleBulkOperations);
+router.use(parseRelationParams);
 
 /**
  * @swagger
@@ -99,7 +104,7 @@ const router = express.Router();
  *                   items:
  *                     $ref: '#/components/schemas/Trip'
  */
-router.get("/", handleContentRange, tripsController.getAllTrips);
+router.get("/", tripsController.getAllTrips);
 
 /**
  * @swagger
@@ -193,7 +198,7 @@ router.get("/:id", tripsController.getTripById);
  *       401:
  *         description: Unauthorized
  */
-router.post("/", authenticate, tripsController.createTrip);
+router.post("/", authenticateToken, checkRole("admin"), tripsController.createTrip);
 
 /**
  * @swagger
@@ -235,7 +240,7 @@ router.post("/", authenticate, tripsController.createTrip);
  *       404:
  *         description: Trip not found
  */
-router.put("/:id", authenticate, tripsController.updateTrip);
+router.put("/:id", authenticateToken, checkRole("admin"), tripsController.updateTrip);
 
 /**
  * @swagger
@@ -282,7 +287,7 @@ router.put("/:id", authenticate, tripsController.updateTrip);
  *       404:
  *         description: Trip not found
  */
-router.put("/:id/translations", authenticate, tripsController.updateTripTranslation);
+router.put("/:id/translations", authenticateToken, checkRole("admin"), tripsController.updateTripTranslation);
 
 /**
  * @swagger
@@ -307,7 +312,7 @@ router.put("/:id/translations", authenticate, tripsController.updateTripTranslat
  *       404:
  *         description: Trip not found
  */
-router.delete("/:id", authenticate, tripsController.deleteTrip);
+router.delete("/:id", authenticateToken, checkRole("admin"), tripsController.deleteTrip);
 
 /**
  * @swagger
@@ -368,7 +373,7 @@ router.get("/:id/images", tripsController.getTripImages);
  *       404:
  *         description: Trip not found
  */
-router.post("/:id/images", authenticate, tripsController.addTripImage);
+router.post("/:id/images", authenticateToken, checkRole("admin"), tripsController.addTripImage);
 
 /**
  * @swagger
@@ -438,12 +443,62 @@ router.get("/:id/dates", tripsController.getTripDates);
  *       404:
  *         description: Trip not found
  */
-router.post("/:id/dates", authenticate, tripsController.addAvailableDate);
+router.post("/:id/dates", authenticateToken, checkRole("admin"), tripsController.addAvailableDate);
 
-// Handle bulk operations for React Admin
-router.use(handleBulkOperations);
+/**
+ * @swagger
+ * /api/v1/trips/bulk/delete:
+ *   post:
+ *     summary: Bulk delete trips
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Trips deleted successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/bulk/delete", authenticateToken, checkRole("admin"), tripsController.bulkDeleteTrips);
 
-// Handle relation expansion
-router.use(handleRelations);
+/**
+ * @swagger
+ * /api/v1/trips/bulk/update:
+ *   post:
+ *     summary: Bulk update trips
+ *     tags: [Trips]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               data:
+ *                 type: object
+ *     responses:
+ *       200:
+ *         description: Trips updated successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/bulk/update", authenticateToken, checkRole("admin"), tripsController.bulkUpdateTrips);
 
 export default router;

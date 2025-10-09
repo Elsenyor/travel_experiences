@@ -2,72 +2,71 @@ import tripModel from "../models/trip.model.js";
 import tripTranslationsModel from "../models/trip.translations.model.js";
 import tripImagesModel from "../models/trip.images.model.js";
 import tripDatesModel from "../models/trip.dates.model.js";
-import { formatResponse, formatErrorResponse } from "../utils/response.formatter.js";
+import { AppError } from "../middlewares/error.middleware.js";
+import { setContentRange } from "../middlewares/content-range.middleware.js";
+import { formatReactAdminList, formatReactAdminGetOne, formatReactAdminSave } from "../utils/response.formatter.js";
+import { processBulkDelete, processBulkUpdate } from "../middlewares/bulk-operations.middleware.js";
 
 /**
  * Get all trips with pagination and filtering
+ * Compatible with React Admin getList
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const getAllTrips = async (req, res) => {
+export const getAllTrips = async (req, res, next) => {
 	try {
-		const {
-			_start = 0,
-			_end = 10,
-			_sort = "created_at",
-			_order = "DESC",
-			language = "es",
-			destination,
-			trip_type,
-			min_price,
-			max_price,
-			featured,
-			q: search,
-		} = req.query;
-
-		const limit = parseInt(_end) - parseInt(_start);
-		const offset = parseInt(_start);
+		// Use React Admin params if available, otherwise use standard query params
+		const params = req.reactAdminParams || {};
+		const filters = params.filters || {};
+		const pagination = params.pagination || { offset: 0, limit: 10 };
+		const sort = params.sort || { field: "created_at", order: "DESC" };
+		const language = filters.language || req.query.language || "es";
 
 		// Get trips with filters
 		const trips = await tripModel.findByFilters({
 			language,
-			destination,
-			trip_type,
-			min_price,
-			max_price,
-			featured: featured === "true" ? true : featured === "false" ? false : undefined,
-			search,
-			limit,
-			offset,
+			destination: filters.destination,
+			trip_type: filters.trip_type,
+			min_price: filters.min_price,
+			max_price: filters.max_price,
+			featured: filters.featured === "true" ? true : filters.featured === "false" ? false : undefined,
+			search: params.search || filters.q,
+			limit: pagination.limit,
+			offset: pagination.offset,
+			sortField: sort.field,
+			sortOrder: sort.order,
 		});
 
 		// Get total count for Content-Range header
 		const total = await tripModel.countByFilters({
 			language,
-			destination,
-			trip_type,
-			min_price,
-			max_price,
-			featured: featured === "true" ? true : featured === "false" ? false : undefined,
-			search,
+			destination: filters.destination,
+			trip_type: filters.trip_type,
+			min_price: filters.min_price,
+			max_price: filters.max_price,
+			featured: filters.featured === "true" ? true : filters.featured === "false" ? false : undefined,
+			search: params.search || filters.q,
 		});
 
 		// Set Content-Range header for React Admin
-		res.set("Content-Range", `trips ${_start}-${Math.min(total, _end - 1)}/${total}`);
-		res.set("X-Total-Count", total.toString());
+		setContentRange(req, res, total);
 
-		return formatResponse(res, trips);
+		// Format response for React Admin
+		res.json(formatReactAdminList(trips, total));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
 /**
  * Get trip by ID with translations
+ * Compatible with React Admin getOne
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const getTripById = async (req, res) => {
+export const getTripById = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 		const { language = "es" } = req.query;
@@ -75,7 +74,7 @@ export const getTripById = async (req, res) => {
 		const trip = await tripModel.findById(id, language);
 
 		if (!trip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
 		// Get related trip images
@@ -88,24 +87,27 @@ export const getTripById = async (req, res) => {
 		trip.images = images || [];
 		trip.availableDates = availableDates || [];
 
-		return formatResponse(res, trip);
+		// Format response for React Admin
+		res.json(formatReactAdminGetOne(trip));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
 /**
  * Create new trip with translations
+ * Compatible with React Admin create
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const createTrip = async (req, res) => {
+export const createTrip = async (req, res, next) => {
 	try {
 		const { destination, trip_type, price, featured, translations } = req.body;
 
 		// Validate required fields
 		if (!destination || !trip_type || !price || !translations || !translations.length) {
-			return formatErrorResponse(res, "Missing required fields", 400);
+			throw new AppError("Missing required fields", 400);
 		}
 
 		// Get user ID from authenticated user
@@ -124,42 +126,68 @@ export const createTrip = async (req, res) => {
 		// Get created trip with translations
 		const trip = await tripModel.findById(tripId, translations[0].language);
 
-		return formatResponse(res, trip, 201);
+		// Get related trip images and dates
+		const images = await tripModel.getTripImages(tripId);
+		const availableDates = await tripModel.getAvailableDates(tripId);
+
+		trip.images = images || [];
+		trip.availableDates = availableDates || [];
+
+		res.status(201).json(formatReactAdminSave(trip));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
 /**
  * Update trip
+ * Compatible with React Admin update
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const updateTrip = async (req, res) => {
+export const updateTrip = async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		const { destination, trip_type, price, featured } = req.body;
+		const { destination, trip_type, price, featured, translations } = req.body;
 
 		// Check if trip exists
 		const existingTrip = await tripModel.findById(id);
 		if (!existingTrip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
-		// Update trip
-		await tripModel.update(id, {
-			destination,
-			trip_type,
-			price,
-			featured,
-		});
+		// Update trip basic data
+		const tripData = {};
+		if (destination !== undefined) tripData.destination = destination;
+		if (trip_type !== undefined) tripData.trip_type = trip_type;
+		if (price !== undefined) tripData.price = price;
+		if (featured !== undefined) tripData.featured = featured;
+
+		if (Object.keys(tripData).length > 0) {
+			await tripModel.update(id, tripData);
+		}
+
+		// Update translations if provided
+		if (translations && Array.isArray(translations)) {
+			for (const translation of translations) {
+				await tripModel.updateTranslation(id, translation);
+			}
+		}
 
 		// Get updated trip
 		const updatedTrip = await tripModel.findById(id);
 
-		return formatResponse(res, updatedTrip);
+		// Get related trip images and dates
+		const images = await tripModel.getTripImages(id);
+		const availableDates = await tripModel.getAvailableDates(id);
+
+		updatedTrip.images = images || [];
+		updatedTrip.availableDates = availableDates || [];
+
+		res.json(formatReactAdminSave(updatedTrip));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
@@ -167,20 +195,21 @@ export const updateTrip = async (req, res) => {
  * Update trip translation
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const updateTripTranslation = async (req, res) => {
+export const updateTripTranslation = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 		const { language, title, description, itinerary } = req.body;
 
 		if (!language || !title || !description || !itinerary) {
-			return formatErrorResponse(res, "Missing required translation fields", 400);
+			throw new AppError("Missing required translation fields", 400);
 		}
 
 		// Check if trip exists
 		const existingTrip = await tripModel.findById(id);
 		if (!existingTrip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
 		// Update translation
@@ -194,33 +223,39 @@ export const updateTripTranslation = async (req, res) => {
 		// Get updated trip with translation
 		const updatedTrip = await tripModel.findById(id, language);
 
-		return formatResponse(res, updatedTrip);
+		res.json(formatReactAdminSave(updatedTrip));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
 /**
  * Delete trip
+ * Compatible with React Admin delete
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const deleteTrip = async (req, res) => {
+export const deleteTrip = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 
 		// Check if trip exists
 		const existingTrip = await tripModel.findById(id);
 		if (!existingTrip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
 		// Delete trip (this should cascade delete translations, images, and dates)
-		await tripModel.remove(id);
+		const deleted = await tripModel.remove(id);
 
-		return formatResponse(res, { message: "Trip deleted successfully" });
+		if (!deleted) {
+			throw new AppError("Failed to delete trip", 500);
+		}
+
+		res.json(formatReactAdminSave({ id }));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
@@ -228,31 +263,32 @@ export const deleteTrip = async (req, res) => {
  * Add image to trip
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const addTripImage = async (req, res) => {
+export const addTripImage = async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		const { url, description } = req.body;
+		const { url, description, is_primary } = req.body;
 
 		if (!url) {
-			return formatErrorResponse(res, "Image URL is required", 400);
+			throw new AppError("Image URL is required", 400);
 		}
 
 		// Check if trip exists
 		const existingTrip = await tripModel.findById(id);
 		if (!existingTrip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
 		// Add image
-		const imageId = await tripModel.addImage(id, url, description);
+		const imageId = await tripModel.addImage(id, url, description, is_primary);
 
 		// Get created image
 		const image = await tripImagesModel.findById(imageId);
 
-		return formatResponse(res, image, 201);
+		res.status(201).json(formatReactAdminSave(image));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
@@ -260,20 +296,21 @@ export const addTripImage = async (req, res) => {
  * Add available date to trip
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const addAvailableDate = async (req, res) => {
+export const addAvailableDate = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 		const { start_date, end_date, spots_available, price_modifier = 0 } = req.body;
 
 		if (!start_date || !end_date || spots_available === undefined) {
-			return formatErrorResponse(res, "Missing required fields for available date", 400);
+			throw new AppError("Missing required fields for available date", 400);
 		}
 
 		// Check if trip exists
 		const existingTrip = await tripModel.findById(id);
 		if (!existingTrip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
 		// Add available date
@@ -287,9 +324,9 @@ export const addAvailableDate = async (req, res) => {
 		// Get created date
 		const availableDate = await tripDatesModel.findById(dateId);
 
-		return formatResponse(res, availableDate, 201);
+		res.status(201).json(formatReactAdminSave(availableDate));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
@@ -297,23 +334,24 @@ export const addAvailableDate = async (req, res) => {
  * Get trip images
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const getTripImages = async (req, res) => {
+export const getTripImages = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 
 		// Check if trip exists
 		const existingTrip = await tripModel.findById(id);
 		if (!existingTrip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
 		// Get images
 		const images = await tripModel.getTripImages(id);
 
-		return formatResponse(res, images);
+		res.json(formatReactAdminList(images, images.length));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
 	}
 };
 
@@ -321,23 +359,64 @@ export const getTripImages = async (req, res) => {
  * Get trip available dates
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
  */
-export const getTripDates = async (req, res) => {
+export const getTripDates = async (req, res, next) => {
 	try {
 		const { id } = req.params;
 
 		// Check if trip exists
 		const existingTrip = await tripModel.findById(id);
 		if (!existingTrip) {
-			return formatErrorResponse(res, "Trip not found", 404);
+			throw new AppError("Trip not found", 404);
 		}
 
 		// Get available dates
 		const dates = await tripModel.getAvailableDates(id);
 
-		return formatResponse(res, dates);
+		res.json(formatReactAdminList(dates, dates.length));
 	} catch (error) {
-		return formatErrorResponse(res, error.message, 500);
+		next(error);
+	}
+};
+
+/**
+ * Bulk delete trips
+ * Compatible with React Admin deleteMany
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+export const bulkDeleteTrips = async (req, res, next) => {
+	try {
+		const { ids } = req.body;
+
+		// Use the bulk operation utility
+		const result = await processBulkDelete(tripModel.remove, ids);
+
+		res.json({ data: ids });
+	} catch (error) {
+		next(error);
+	}
+};
+
+/**
+ * Bulk update trips
+ * Compatible with React Admin updateMany
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+export const bulkUpdateTrips = async (req, res, next) => {
+	try {
+		const { ids, data } = req.body;
+
+		// Use the bulk operation utility
+		const result = await processBulkUpdate(tripModel.update, ids, data);
+
+		res.json({ data: ids });
+	} catch (error) {
+		next(error);
 	}
 };
 
@@ -352,4 +431,6 @@ export default {
 	addAvailableDate,
 	getTripImages,
 	getTripDates,
+	bulkDeleteTrips,
+	bulkUpdateTrips,
 };
