@@ -57,15 +57,19 @@ export const getPool = () => {
  * Execute SQL query with parameters
  * @param {string} query - SQL query
  * @param {Array} params - Query parameters
+ * @param {boolean} silent - If true, don't log errors (for expected errors like checking table existence)
  * @returns {Promise<Array>} Query results
  */
-export const executeQuery = async (query, params = []) => {
+export const executeQuery = async (query, params = [], silent = false) => {
 	const currentPool = getPool();
 	try {
 		const [results] = await currentPool.query(query, params);
 		return results;
 	} catch (error) {
-		console.error("Error executing query:", error);
+		// Only log errors if not in silent mode
+		if (!silent) {
+			console.error("Error executing query:", error);
+		}
 		throw error;
 	}
 };
@@ -137,13 +141,13 @@ export const ensureDatabase = async () => {
  */
 export const ensureSchemaVersions = async () => {
 	try {
-		// Try to query schema_versions table
-		await executeQuery("SELECT 1 FROM schema_versions LIMIT 1");
+		// Try to query schema_versions table (silent mode to avoid logging expected errors)
+		await executeQuery("SELECT 1 FROM schema_versions LIMIT 1", [], true);
 		console.log("✅ Schema versions table exists");
 		return true;
 	} catch (error) {
 		if (error.errno === 1146) {
-			// ER_NO_SUCH_TABLE
+			// ER_NO_SUCH_TABLE - This is expected on first run
 			// Create schema_versions table
 			const schemaSQL = await fs.readFile(join(__dirname, "../db/schema_versions.sql"), "utf8");
 			await executeQuery(schemaSQL);

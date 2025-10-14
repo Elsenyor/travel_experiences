@@ -1,4 +1,5 @@
 import dbPool from "../utils/database.pool.js";
+import { generateSlug, generateUniqueSlug, getSlugFromTitle } from "../utils/slug.utils.js";
 
 /**
  * Find trip by ID with translations in specified language
@@ -54,6 +55,21 @@ export const getAvailableDates = async (tripId) => {
 };
 
 /**
+ * Find trip by slug
+ * @param {string} slug - Trip slug
+ * @returns {Promise<Object|null>} Trip object or null
+ */
+export const findBySlug = async (slug) => {
+	const query = "SELECT id, slug FROM trips WHERE slug = ?";
+	try {
+		const trips = await dbPool.executeQuery(query, [slug]);
+		return trips[0] || null;
+	} catch (error) {
+		throw new Error(`Error finding trip by slug: ${error.message}`);
+	}
+};
+
+/**
  * Create new trip with translations using transaction to ensure integrity
  * @param {Object} tripData - Trip data
  * @param {string} tripData.destination - Destination city/location
@@ -61,6 +77,7 @@ export const getAvailableDates = async (tripId) => {
  * @param {number} tripData.price - Trip price per person
  * @param {boolean} tripData.featured - Whether to show in featured section
  * @param {number} tripData.created_by - ID of user creating the trip
+ * @param {string} tripData.slug - Optional custom slug
  * @param {Array} tripData.translations - Array of translation objects
  * @param {string} tripData.translations[].language - Language code
  * @param {string} tripData.translations[].title - Trip title
@@ -68,30 +85,32 @@ export const getAvailableDates = async (tripId) => {
  * @param {string} tripData.translations[].itinerary - Trip itinerary
  * @returns {Promise<number>} Created trip ID
  */
-export const create = async ({ destination, trip_type, price, featured = false, created_by, translations }) => {
+export const create = async ({ destination, trip_type, price, featured = false, created_by, slug, translations }) => {
 	// Validate required translations
 	if (!translations || !translations.length) {
 		throw new Error("At least one translation is required");
 	}
 
-	// Prepare queries for transaction
-	const queries = [
-		[
-			"INSERT INTO trips (destination, trip_type, price, featured, created_by) VALUES (?, ?, ?, ?, ?)",
-			[destination, trip_type, price, featured, created_by],
-		],
-	];
-
-	// Add translation queries
+	// Validate translation data
 	translations.forEach((translation) => {
 		if (!translation.language || !translation.title || !translation.description || !translation.itinerary) {
 			throw new Error("Incomplete translation data");
 		}
 	});
 
+	// Generate slug from first translation title if not provided
+	const firstTranslation = translations[0];
+	let finalSlug = getSlugFromTitle(firstTranslation.title, slug);
+
+	// Ensure slug is unique
+	finalSlug = await generateUniqueSlug(finalSlug, findBySlug);
+
+	// Create trip with slug
+	const query = "INSERT INTO trips (destination, trip_type, price, featured, created_by, slug) VALUES (?, ?, ?, ?, ?, ?)";
+
 	try {
-		const results = await dbPool.executeTransaction(queries);
-		const tripId = results[0].insertId;
+		const result = await dbPool.executeQuery(query, [destination, trip_type, price, featured, created_by, finalSlug]);
+		const tripId = result.insertId;
 
 		// Add translations after getting trip ID
 		for (const translation of translations) {
@@ -149,15 +168,32 @@ export const addAvailableDate = async (tripId, startDate, endDate, availableSpot
  * Update trip data
  * @param {number} id - Trip ID
  * @param {Object} updateData - Data to update
+ * @param {string} updateData.slug - Optional slug (will be validated and made unique)
  * @returns {Promise<boolean>} True if updated, false otherwise
  */
 export const update = async (id, updateData) => {
-	const allowedFields = ["destination", "trip_type", "price", "featured"];
+	const allowedFields = ["destination", "trip_type", "price", "featured", "slug"];
 	const updates = [];
 	const values = [];
 
+	// Handle slug separately to ensure uniqueness
+	if (updateData.slug !== undefined) {
+		let newSlug = updateData.slug;
+
+		// If slug is provided, sanitize it
+		if (newSlug) {
+			newSlug = generateSlug(newSlug);
+			// Ensure uniqueness (excluding current trip)
+			newSlug = await generateUniqueSlug(newSlug, findBySlug, id);
+		}
+
+		updates.push("slug = ?");
+		values.push(newSlug);
+	}
+
+	// Handle other fields
 	Object.keys(updateData).forEach((key) => {
-		if (allowedFields.includes(key)) {
+		if (allowedFields.includes(key) && key !== "slug") {
 			updates.push(`${key} = ?`);
 			values.push(updateData[key]);
 		}
@@ -345,6 +381,7 @@ export const countByFilters = async ({ language = "es", destination, trip_type, 
 
 export default {
 	findById,
+	findBySlug,
 	getTripImages,
 	getAvailableDates,
 	create,

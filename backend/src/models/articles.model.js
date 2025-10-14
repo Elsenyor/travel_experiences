@@ -1,4 +1,5 @@
 import dbPool from "../utils/database.pool.js";
+import { generateSlug, generateUniqueSlug, getSlugFromTitle } from "../utils/slug.utils.js";
 
 /**
  * Find article by ID with translations in specified language
@@ -45,10 +46,26 @@ export const getArticleTags = async (articleId) => {
 };
 
 /**
+ * Find article by slug
+ * @param {string} slug - Article slug
+ * @returns {Promise<Object|null>} Article object or null
+ */
+export const findBySlug = async (slug) => {
+	const query = "SELECT id, slug FROM articles WHERE slug = ?";
+	try {
+		const articles = await dbPool.executeQuery(query, [slug]);
+		return articles[0] || null;
+	} catch (error) {
+		throw new Error(`Error finding article by slug: ${error.message}`);
+	}
+};
+
+/**
  * Create new article with translations using transaction to ensure integrity
  * @param {Object} articleData - Article data
  * @param {number} articleData.author_id - Author ID
  * @param {string} articleData.featured_image - Featured image URL
+ * @param {string} articleData.slug - Optional custom slug
  * @param {Array} articleData.translations - Array of translation objects
  * @param {string} articleData.translations[].language - Language code
  * @param {string} articleData.translations[].title - Article title
@@ -56,25 +73,35 @@ export const getArticleTags = async (articleId) => {
  * @param {Array} articleData.tags - Array of tag IDs
  * @returns {Promise<number>} Created article ID
  */
-export const create = async ({ author_id, featured_image, translations, tags = [] }) => {
+export const create = async ({ author_id, featured_image, slug, translations, tags = [] }) => {
 	// Validate required translations
 	if (!translations || !translations.length) {
 		throw new Error("At least one translation is required");
 	}
 
-	// Prepare queries for transaction
-	const queries = [["INSERT INTO articles (author_id, featured_image) VALUES (?, ?)", [author_id, featured_image]]];
+	// Validate translation data
+	translations.forEach((translation) => {
+		if (!translation.language || !translation.title || !translation.content) {
+			throw new Error("Incomplete translation data");
+		}
+	});
+
+	// Generate slug from first translation title if not provided
+	const firstTranslation = translations[0];
+	let finalSlug = getSlugFromTitle(firstTranslation.title, slug);
+
+	// Ensure slug is unique
+	finalSlug = await generateUniqueSlug(finalSlug, findBySlug);
+
+	// Create article with slug
+	const query = "INSERT INTO articles (author_id, featured_image, slug) VALUES (?, ?, ?)";
 
 	try {
-		const results = await dbPool.executeTransaction(queries);
-		const articleId = results[0].insertId;
+		const result = await dbPool.executeQuery(query, [author_id, featured_image, finalSlug]);
+		const articleId = result.insertId;
 
 		// Add translations
 		for (const translation of translations) {
-			if (!translation.language || !translation.title || !translation.content) {
-				throw new Error("Incomplete translation data");
-			}
-
 			await dbPool.executeQuery("INSERT INTO article_translations (article_id, language, title, content) VALUES (?, ?, ?, ?)", [
 				articleId,
 				translation.language,
@@ -100,15 +127,32 @@ export const create = async ({ author_id, featured_image, translations, tags = [
  * Update article data
  * @param {number} id - Article ID
  * @param {Object} updateData - Data to update
+ * @param {string} updateData.slug - Optional slug (will be validated and made unique)
  * @returns {Promise<boolean>} True if updated, false otherwise
  */
 export const update = async (id, updateData) => {
-	const allowedFields = ["author_id", "featured_image"];
+	const allowedFields = ["author_id", "featured_image", "slug"];
 	const updates = [];
 	const values = [];
 
+	// Handle slug separately to ensure uniqueness
+	if (updateData.slug !== undefined) {
+		let newSlug = updateData.slug;
+
+		// If slug is provided, sanitize it
+		if (newSlug) {
+			newSlug = generateSlug(newSlug);
+			// Ensure uniqueness (excluding current article)
+			newSlug = await generateUniqueSlug(newSlug, findBySlug, id);
+		}
+
+		updates.push("slug = ?");
+		values.push(newSlug);
+	}
+
+	// Handle other fields
 	Object.keys(updateData).forEach((key) => {
-		if (allowedFields.includes(key)) {
+		if (allowedFields.includes(key) && key !== "slug") {
 			updates.push(`${key} = ?`);
 			values.push(updateData[key]);
 		}
@@ -260,6 +304,7 @@ export const countByFilters = async ({ language = "es", search, author_id, tag_i
 
 export default {
 	findById,
+	findBySlug,
 	getArticleTags,
 	create,
 	update,
